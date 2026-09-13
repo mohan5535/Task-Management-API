@@ -1,0 +1,2 @@
+import {Link} from 'react-router-dom'
+export default function TaskCard({task}){return <article className="task-card"><div className="task-card-top"><span className={`status status-${task.status}`}>{task.status}</span><span className="task-id">#{task.id}</span></div><h3>{task.title}</h3><p>{task.description||'No description provided.'}</p><Link className="text-link" to={`/tasks/${task.id}`}>View details →</Link></article>}

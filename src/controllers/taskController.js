@@ -2,7 +2,7 @@ const db = require("../database/database");
 const statuses = ["pending","in-progress","completed"];
 
 function validate(title,status) {
-  if (!title || typeof title !== "string" || !title.trim()) return "Title is required.";
+  if (typeof title !== "string" || !title.trim()) return "Title is required.";
   if (title.trim().length > 100) return "Title must be 100 characters or fewer.";
   if (status !== undefined && !statuses.includes(status)) return "Status must be pending, in-progress, or completed.";
   return null;
@@ -12,6 +12,7 @@ function createTask(req,res) {
   const error = validate(title,status);
   if (error) return res.status(400).json({success:false,message:error});
   if (typeof description !== "string") return res.status(400).json({success:false,message:"Description must be a string."});
+  if (description.length > 500) return res.status(400).json({success:false,message:"Description must be 500 characters or fewer."});
   const r = db.prepare("INSERT INTO tasks(title,description,status,user_id) VALUES(?,?,?,?)").run(title.trim(),description.trim(),status,req.user.id);
   const task = db.prepare("SELECT * FROM tasks WHERE id=? AND user_id=?").get(r.lastInsertRowid,req.user.id);
   return res.status(201).json({success:true,message:"Task created successfully.",task});
@@ -37,6 +38,7 @@ function updateTask(req,res) {
   const error = validate(nextTitle,nextStatus);
   if (error) return res.status(400).json({success:false,message:error});
   if (typeof nextDescription !== "string") return res.status(400).json({success:false,message:"Description must be a string."});
+  if (nextDescription.length > 500) return res.status(400).json({success:false,message:"Description must be 500 characters or fewer."});
   db.prepare("UPDATE tasks SET title=?,description=?,status=?,updated_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?")
     .run(nextTitle.trim(),nextDescription.trim(),nextStatus,req.params.id,req.user.id);
   const task = db.prepare("SELECT * FROM tasks WHERE id=? AND user_id=?").get(req.params.id,req.user.id);

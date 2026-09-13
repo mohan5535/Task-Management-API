@@ -4,10 +4,13 @@ const db = require("../database/database");
 
 function register(req,res) {
   const {name,email,password} = req.body;
-  if (!name || !email || !password) return res.status(400).json({success:false,message:"Name, email and password are required."});
+  if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || !name.trim() || !email.trim() || !password)
+    return res.status(400).json({success:false,message:"Name, email and password are required."});
   const normalizedEmail = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail))
     return res.status(400).json({success:false,message:"Please provide a valid email address."});
+  if (name.trim().length < 2)
+    return res.status(400).json({success:false,message:"Name must be at least 2 characters long."});
   if (password.length < 6)
     return res.status(400).json({success:false,message:"Password must be at least 6 characters long."});
   if (db.prepare("SELECT id FROM users WHERE email=?").get(normalizedEmail))
@@ -19,7 +22,8 @@ function register(req,res) {
 
 function login(req,res) {
   const {email,password} = req.body;
-  if (!email || !password) return res.status(400).json({success:false,message:"Email and password are required."});
+  if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password)
+    return res.status(400).json({success:false,message:"Email and password are required."});
   const user = db.prepare("SELECT * FROM users WHERE email=?").get(email.trim().toLowerCase());
   if (!user || !bcrypt.compareSync(password,user.password))
     return res.status(401).json({success:false,message:"Invalid email or password."});

@@ -1,0 +1,10 @@
+import { Navigate, Route, Routes } from 'react-router-dom'
+import Layout from './components/Layout'
+import ProtectedRoute from './components/ProtectedRoute'
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Tasks from './pages/Tasks'
+import TaskDetails from './pages/TaskDetails'
+import CreateTask from './pages/CreateTask'
+import EditTask from './pages/EditTask'
+export default function App() { return <Routes><Route element={<Layout />}><Route path="/login" element={<Login />} /><Route path="/register" element={<Register />} /><Route element={<ProtectedRoute />}><Route path="/tasks" element={<Tasks />} /><Route path="/tasks/new" element={<CreateTask />} /><Route path="/tasks/:id" element={<TaskDetails />} /><Route path="/tasks/:id/edit" element={<EditTask />} /></Route><Route path="/" element={<Navigate to="/tasks" replace />} /><Route path="*" element={<Navigate to="/tasks" replace />} /></Route></Routes> }
