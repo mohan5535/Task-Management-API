@@ -1,9 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const db = require("../database/database");
+const { pool } = require("../database/database");
 
-function register(req,res) {
-  const {name,email,password} = req.body;
+async function register(req,res) {
+  const {name,email,password} = req.body || {};
   if (typeof name !== "string" || typeof email !== "string" || typeof password !== "string" || !name.trim() || !email.trim() || !password)
     return res.status(400).json({success:false,message:"Name, email and password are required."});
   const normalizedEmail = email.trim().toLowerCase();
@@ -13,18 +13,28 @@ function register(req,res) {
     return res.status(400).json({success:false,message:"Name must be at least 2 characters long."});
   if (password.length < 6)
     return res.status(400).json({success:false,message:"Password must be at least 6 characters long."});
-  if (db.prepare("SELECT id FROM users WHERE email=?").get(normalizedEmail))
+  const existingUser = await pool.query("SELECT id FROM users WHERE email = $1", [normalizedEmail]);
+  if (existingUser.rowCount)
     return res.status(400).json({success:false,message:"An account with this email already exists."});
   const hash = bcrypt.hashSync(password,10);
-  const result = db.prepare("INSERT INTO users(name,email,password) VALUES(?,?,?)").run(name.trim(),normalizedEmail,hash);
-  return res.status(201).json({success:true,message:"User registered successfully.",user:{id:result.lastInsertRowid,name:name.trim(),email:normalizedEmail}});
+  try {
+    const result = await pool.query(
+      "INSERT INTO users(name, email, password) VALUES($1, $2, $3) RETURNING id",
+      [name.trim(), normalizedEmail, hash],
+    );
+    return res.status(201).json({success:true,message:"User registered successfully.",user:{id:result.rows[0].id,name:name.trim(),email:normalizedEmail}});
+  } catch (error) {
+    if (error.code === "23505") return res.status(400).json({success:false,message:"An account with this email already exists."});
+    throw error;
+  }
 }
 
-function login(req,res) {
-  const {email,password} = req.body;
+async function login(req,res) {
+  const {email,password} = req.body || {};
   if (typeof email !== "string" || typeof password !== "string" || !email.trim() || !password)
     return res.status(400).json({success:false,message:"Email and password are required."});
-  const user = db.prepare("SELECT * FROM users WHERE email=?").get(email.trim().toLowerCase());
+  const result = await pool.query("SELECT * FROM users WHERE email = $1", [email.trim().toLowerCase()]);
+  const user = result.rows[0];
   if (!user || !bcrypt.compareSync(password,user.password))
     return res.status(401).json({success:false,message:"Invalid email or password."});
   const token = jwt.sign({id:user.id,email:user.email},process.env.JWT_SECRET,{expiresIn:"1h"});

@@ -1,23 +1,52 @@
-const Database = require("better-sqlite3");
+const fs = require("fs/promises");
 const path = require("path");
-const db = new Database(path.join(__dirname, "../../tasks.db"));
-db.pragma("foreign_keys = ON");
-db.exec(`
-CREATE TABLE IF NOT EXISTS users (
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- name TEXT NOT NULL,
- email TEXT NOT NULL UNIQUE,
- password TEXT NOT NULL,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-CREATE TABLE IF NOT EXISTS tasks (
- id INTEGER PRIMARY KEY AUTOINCREMENT,
- title TEXT NOT NULL,
- description TEXT DEFAULT "",
- status TEXT NOT NULL DEFAULT "pending",
- user_id INTEGER NOT NULL,
- created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
- FOREIGN KEY(user_id) REFERENCES users(id) ON DELETE CASCADE
-);`);
-module.exports = db;
+const { Pool } = require("pg");
+
+if (!process.env.DATABASE_URL) {
+	throw new Error("DATABASE_URL must be configured before loading the database module.");
+}
+
+const pool = new Pool({
+	connectionString: process.env.DATABASE_URL,
+	ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : undefined,
+});
+
+async function initializeDatabase() {
+	const client = await pool.connect();
+	try {
+		await client.query(`
+			CREATE TABLE IF NOT EXISTS schema_migrations (
+				version TEXT PRIMARY KEY,
+				applied_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+			)
+		`);
+
+		const migrationsDirectory = path.join(__dirname, "migrations");
+		const migrationFiles = (await fs.readdir(migrationsDirectory))
+			.filter((file) => file.endsWith(".sql"))
+			.sort();
+
+		for (const file of migrationFiles) {
+			const alreadyApplied = await client.query(
+				"SELECT 1 FROM schema_migrations WHERE version = $1",
+				[file],
+			);
+			if (alreadyApplied.rowCount) continue;
+
+			await client.query("BEGIN");
+			try {
+				const sql = await fs.readFile(path.join(migrationsDirectory, file), "utf8");
+				await client.query(sql);
+				await client.query("INSERT INTO schema_migrations(version) VALUES($1)", [file]);
+				await client.query("COMMIT");
+			} catch (error) {
+				await client.query("ROLLBACK");
+				throw error;
+			}
+		}
+	} finally {
+		client.release();
+	}
+}
+
+module.exports = { pool, initializeDatabase };
