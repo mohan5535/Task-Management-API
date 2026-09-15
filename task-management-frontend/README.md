@@ -1,40 +1,106 @@
-# TaskFlow — React Frontend
+# TaskFlow — React Task Management Frontend
 
-Responsive React frontend consuming the Task Management REST API.
+A responsive React frontend for managing tasks through a secure REST API.
 
-## Stack
-React, Vite, React Router, JavaScript, Context API/useState, Fetch API, CSS.
+TaskFlow provides user authentication and complete task management functionality with a clean and responsive interface.
 
-## Features
-- Registration and login
-- JWT authentication and protected routes
-- Live task data from the backend API (no mock task arrays)
-- Task list and details
-- Create, edit and delete tasks
-- Client-side validation
-- Visible loading and error states
-- Responsive mobile and desktop UI
-- Logout
+## 🚀 Live Demo
 
-## Routes
-- `/login`
-- `/register`
-- `/tasks`
-- `/tasks/:id`
-- `/tasks/new`
-- `/tasks/:id/edit`
+**Frontend:**  
+https://task-management-api-wheat-alpha.vercel.app
 
-## Setup
-1. Start the Task Management API on `http://localhost:3000`.
-2. Run `npm install`.
-3. Copy `.env.example` to `.env` if you need to change the API URL.
-4. Run `npm run dev`.
-5. Open the Vite URL shown in the terminal.
+**Backend API:**  
+https://task-management-api-m54c.onrender.com
 
-Default API URL: `http://localhost:3000/api`
-
-## Build
-Run `npm run build` before submission.
-
-## Related backend
+**Backend Repository:**  
 https://github.com/mohan5535/Task-Management-API
+
+---
+
+## 🛠️ Tech Stack
+
+### Frontend
+
+- React
+- Vite
+- React Router
+- JavaScript
+- Context API
+- React Hooks
+- Fetch API
+- CSS
+
+### Backend
+
+- Node.js
+- Express.js
+- PostgreSQL
+- JWT Authentication
+- bcrypt
+
+### Deployment
+
+- Frontend: Vercel
+- Backend: Render
+- Database: PostgreSQL
+
+---
+
+## ✨ Features
+
+- User registration
+- User login
+- JWT-based authentication
+- Protected routes
+- Secure logout
+- Live task data from REST API
+- Create tasks
+- View task list
+- View task details
+- Edit tasks
+- Delete tasks
+- Task status management
+- Client-side form validation
+- Loading states
+- Error handling
+- Responsive mobile and desktop UI
+- PostgreSQL database integration
+- Production API integration
+
+---
+
+## 📌 Application Routes
+
+| Route | Description |
+|---|---|
+| `/login` | User login |
+| `/register` | Create a new account |
+| `/tasks` | View all tasks |
+| `/tasks/new` | Create a new task |
+| `/tasks/:id` | View task details |
+| `/tasks/:id/edit` | Edit an existing task |
+
+---
+
+## 🔐 Authentication
+
+TaskFlow uses JWT authentication.
+
+After successful login:
+
+1. The backend returns a JWT token.
+2. The frontend stores the token locally.
+3. Protected API requests send the token using the `Authorization` header.
+4. Users without a valid token cannot access protected task routes.
+
+---
+
+## 🔗 API Integration
+
+The frontend communicates with the Task Management REST API.
+
+### Authentication Endpoints
+
+```text
+POST /api/auth/register
+POST /api/auth/login
